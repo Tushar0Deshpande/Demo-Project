@@ -1,0 +1,54 @@
+import tensorflow as tf
+import numpy as np
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+import matplotlib.pyplot as plt
+import cv2
+
+# Load the pretrained model
+model = load_model('unet_colorization_model2.keras')
+
+def preprocess_image(image_path, target_size=(32, 32)):
+    grayscale_image = load_img(image_path, color_mode='grayscale', target_size=target_size)
+    grayscale_array = img_to_array(grayscale_image) / 255.0  # Normalize
+    grayscale_array = np.expand_dims(grayscale_array, axis=0)  # Add batch dimension
+    return grayscale_array, grayscale_image
+
+
+# Function to postprocess the output image
+def postprocess_output(output_array):
+    # Remove batch dimension
+    output_image = np.squeeze(output_array, axis=0)
+    # Clip the values to [0, 1] and convert to uint8
+    output_image = np.clip(output_image, 0, 1) * 255
+    output_image = output_image.astype('uint8')
+    return output_image
+
+# Function to visualize input and output images
+def visualize_images(grayscale_image, colorized_image):
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.title("Grayscale Image")
+    plt.imshow(grayscale_image, cmap='gray')
+    plt.axis('off')
+
+    plt.subplot(1, 2, 2)
+    plt.title("Colorized Image")
+    plt.imshow(colorized_image)
+    plt.axis('off')
+    plt.show()
+
+# Path to your input grayscale image
+image_path = 'image.jpg'
+
+# Preprocess the image
+grayscale_array, grayscale_image = preprocess_image(image_path)
+
+# Predict the colorized image
+colorized_array = model.predict(grayscale_array)
+
+# Postprocess the predicted image
+colorized_image = postprocess_output(colorized_array)
+
+# Visualize the input and colorized images
+visualize_images(grayscale_image, colorized_image)
